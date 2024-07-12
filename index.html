@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<meta name="viewport" content="user-scalable=yes, width=device-width, initial-scale=1.0" />
+	<title>Decision Roulette</title>
+	<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<!--FONTS-->
+    <link rel="preconnect" href="https://rsms.me/" />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+
+	<style>
+		:root {
+			font-family: Inter, sans-serif;
+			font-feature-settings: "liga" 1, "calt" 1;
+		}
+
+		@supports (font-variation-settings: normal) {
+			:root {
+			font-family: InterVariable, sans-serif;
+			}
+		}
+
+		#roulette {
+            width: 300px;
+			height: 300px;
+			position: relative;
+			background: darkgray;
+			border-radius: 1px solid gray;
+			border-radius: 50%;
+			overflow: hidden;
+			color: black;
+        }
+		
+        .option {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+			display: flex;
+			text-align: center;
+			justify-content: center;
+            align-items: center;
+			border-radius: 50%;
+			font-weight: bold;
+        }
+
+		.triangulo{
+			width: 0;
+			height: 0;
+			border-top: 15px solid transparent;
+			border-right: 30px solid darkslategray;
+			border-bottom: 15px solid transparent;
+			position: absolute;
+			margin-left: 275px;
+			margin-top: 135px;
+			z-index: 1000;
+		}
+	</style>
+</head>
+<body class="dark:bg-neutral-900">
+	<div id="app" class="container mx-auto text-base text-neutral-800 dark:text-neutral-200">
+		<h1 class="py-10 text-center text-5xl font-extrabold dark:text-white">{{ title }}</h1>
+
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-4 justify-items-center mt-10">
+			<div class="text-center">
+				<div class="triangulo"></div>
+				<div id="roulette">
+					<div v-for="(option, index) in decisions" :id="index" :key="index" class="option" :style="{
+						top: 100 + 100 * Math.sin(2 * Math.PI * index / decisions.length) + 'px',
+						left: 100 + 100 * Math.cos(2 * Math.PI * index / decisions.length) + 'px',
+						transform: 'rotate(' + Math.imul(index, Math.floor(360 / decisions.length))+'deg)',
+						backgroundColor: 'hsl(' + Math.imul(index, Math.floor(360 / decisions.length))+', ' + 100+'%, ' + 50+'%)'
+					}">
+					{{ option.text }}
+					</div>
+				</div>
+				<button class="mt-5 bg-neutral-300 dark:bg-neutral-700 hover:bg-neutral-500 px-3 py-2 radius" @click="spin">Spin</button>
+			</div>
+			<div>
+				<input autofocus placeholder="Add a New Decision" class="px-3 py-2 text-neutral-900" v-model="decision.text" />
+				<button class="bg-neutral-300 dark:bg-neutral-700 hover:bg-neutral-500 px-3 py-2 radius" @click="addDecision">Submit</button>
+
+				<div class="overflow-x-auto mt-10">
+					<table class="min-w-full divide-y-2 divide-gray-200 text-sm">
+					<thead class="ltr:text-left rtl:text-right">
+						<tr>
+						<th class="whitespace-nowrap px-4 py-2 font-medium">Name</th>
+						<th class="whitespace-nowrap px-4 py-2 font-medium">Delete</th>
+						</tr>
+					</thead>
+				
+					<tbody class="divide-y divide-gray-200" v-for="(decision, index) in decisions">
+						<tr>
+						<td class="whitespace-nowrap px-4 py-2 font-medium">{{decision.text}}</td>
+						<td class="whitespace-nowrap px-4 py-2 text-center"><button class="close text-xl text-red-600 dark:text-red-400" @click="removeDecision(index)">&#128465;</button></td>
+						</tr>
+					</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		var app = new Vue({
+			el: '#app',
+			data: {
+				title: 'Decision Roulette',
+				decision: {
+					text: '',
+				}, decisions: []
+			},
+			methods: {
+				addDecision() {
+					let { text, title, color } = this.decision
+					if (text === '') {
+					   return;
+					}
+					this.decisions.push({
+						text,
+					});
+					this.decision.text = '';
+				}, removeDecision(index) {
+					this.$delete(this.decisions, index);
+				}, spin() {
+					const wheel = document.getElementById('roulette');
+					const deg = Math.floor(5000 + Math.random() * 5000);
+					wheel.style.transition = 'transform 10s ease-out';
+					wheel.style.transform = `rotate(${deg}deg)`;
+					
+					wheel.addEventListener('transitionend', () => {
+						wheel.style.transition = 'none';
+						const actualDeg = deg % 360;
+						wheel.style.transform = `rotate(${actualDeg}deg)`;
+					});
+                }
+			}, mounted() {
+				if (localStorage.getItem('decisions')) this.decisions = JSON.parse(localStorage.getItem('decisions'));
+			}, watch: {
+				decisions: {
+					handler() {
+						localStorage.setItem('decisions', JSON.stringify(this.decisions));
+					}, deep: true,
+				},
+			}
+		})
+	</script>
+</body>
+</html>
